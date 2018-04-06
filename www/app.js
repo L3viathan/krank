@@ -118,7 +118,7 @@ function sendMatchToAPI(data) {
         }
     };
     xhr.setRequestHeader("Content-type", "application/json");
-    var data = "w1="+data[0]+"&w2="+data[1]+"&l1="+data[2]+"&l2="+data[3];
+    var data = "winners="+data[0]+","+data[1]+"&losers="+data[2]+","+data[3];
     xhr.send(data);
 }
 
@@ -136,7 +136,7 @@ function fillDataFromAPI() {
 
 function fillLogsFromAPI() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://kicker.ding.si/logs");
+    xhr.open("GET", "http://kicker.ding.si/logs.html");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4 && xhr.status == 200) {
             updateLogs(xhr.responseText);

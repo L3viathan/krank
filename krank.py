@@ -1,45 +1,68 @@
 import json
-import shelve
 import operator
 import datetime
+from functools import partial
 from urllib.parse import parse_qs
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from html import unescape
 
+try:
+    with open("hidden.json") as f:
+        HIDDEN = set(json.load(f))
+except:
+    HIDDEN = []
+
+scores = {}
+
+bytes = partial(bytes, encoding="utf8")
+
+
 class KickerAPI(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/table":
-            with shelve.open("elodata") as scores:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps(
+                {k: v
+                    for k, v in scores.items()
+                    if k not in HIDDEN
+                }
+                # dict(scores)
+            ).encode())
+        elif self.path == "/logs.json":
+            with open("scores.json", "r") as f:
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(json.dumps(
-                    {k: v
-                        for k, v in scores.items()
-                    }
-                    # dict(scores)
-                ).encode())
-        elif self.path == "/logs":
-            with open("scores.log", "rb") as f:
+                for line in f:
+                    data = json.loads(line)
+                    data.pop("date")
+                    self.wfile.write(bytes(json.dumps(data)))
+                    self.wfile.write(b"\n")
+        elif self.path == "/logs.html":
+            with open("scores.json", "r") as f:
                 self.send_response(200)
-                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Type", "text/html")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(b"<br>".join(list(
-                    bstr.split(b"- ")[1] for bstr in reversed(f.readlines())
-                )[:5]))
-        # elif self.path == "/bootstrap":
-        #     load_data()
-        #     self.send_response(200)
-        #     self.send_header("Content-Type", "application/json")
-        #     self.send_header("Access-Control-Allow-Origin", "*")
-        #     self.end_headers()
-        #     self.wfile.write(b"Success")
-        elif self.path in ("/index.html", "/", "/style.css", "/app.js") or self.path.startswith("/avatars/"):
+                for line in reversed(f.read().split("\n")):
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    self.wfile.write(
+                        b",".join(map(bytes, data["winners"])) +
+                        b" defeat " +
+                        b",".join(map(bytes, data["losers"])) +
+                        b"<br>"
+                    )
+                    self.wfile.write(b"\n")
+        else:
             if self.path == "/":
                 self.path = "/index.html"
-            elif self.path.startswith("/avatars/"):
+            elif self.path in ("/index.html", "/", "/style.css", "/app.js") or self.path.startswith("/avatars/"):
                 if self.path.count("/") > 2:
                     return
             try:
@@ -58,7 +81,10 @@ class KickerAPI(BaseHTTPRequestHandler):
     def do_POST(self):
         self.make_post_parameters()
         print("Got a POST request", self.post_data)
-        elo_kicker(*(self.post_data[key] for key in ("w1","w2","l1","l2")))
+        elo_kicker(
+            winners=self.post_data["winners"].split(","),
+            losers=self.post_data["losers"].split(","),
+        )
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -75,15 +101,17 @@ class KickerAPI(BaseHTTPRequestHandler):
         }
 
 
-def elo(w1, w2, l1, l2, k=16):
+def elo(wins, loses, k=16):
+    # Should return adjustments
     """
     Return the new ELO ranks.
 
     Given two winners and two losers, return the new elo scores in the same
     order.
     """
-    winners = (w1+w2)/2
-    losers = (l1+l2)/2
+
+    winners = sum(scores.get(winner, 1000) for winner in wins) / len(wins)
+    losers = sum(scores.get(loser, 1000) for loser in loses) / len(loses)
 
     R_w = 10**(winners/400)
     R_l = 10**(losers/400)
@@ -91,51 +119,46 @@ def elo(w1, w2, l1, l2, k=16):
     E_w = R_w/(R_w+R_l)
 
     game_value = round(k*(1-E_w))
-    return (
-        w1+game_value,
-        w2+game_value,
-        l1-game_value,
-        l2-game_value,
-    )
+    data = {
+        winner: game_value for winner in wins
+    }
+    data.update({
+        loser: -game_value for loser in loses
+    })
+    return data
 
-def elo_kicker(w1, w2, l1, l2):
+def elo_kicker(winners, losers, nowrite=False):
     """
     Given four users, mutate the global register of user scores.
     """
-    with shelve.open("elodata") as scores:
-        s1 = scores.get(w1, 1000)
-        s2 = scores.get(w2, 1000)
-        s3 = scores.get(l1, 1000)
-        s4 = scores.get(l2, 1000)
-        s1, s2, s3, s4 = elo(s1, s2, s3, s4)
-        scores[w1] = s1
-        scores[w2] = s2
-        scores[l1] = s3
-        scores[l2] = s4
-    with open("scores.log", "a") as f:
-        f.write(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
-        f.write(" - ")
-        f.write(w1 + "+" + w2 + " defeat " + l1 + "+" + l2 + "\n")
+    for player, change in elo(winners, losers).items():
+        scores[player] = change + scores.get(player, 1000)
+    if nowrite:
+        return
+    with open("scores.json", "a") as f:
+        f.write(json.dumps({
+            "date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            "winners": winners,
+            "losers": losers,
+        }))
+        f.write("\n")
 
 def load_data():
-    with open("kicker.txt") as f:
+    with open("scores.json") as f:
         for line in f:
-            w, l = line.strip().split("-")
-            w1, w2 = w.split("+")
-            l1, l2 = l.split("+")
-            elo_kicker(w1, w2, l1, l2)
+            data = json.loads(line)
+            elo_kicker(winners=data["winners"], losers=data["losers"], nowrite=True)
 
 def print_ranks():
     """Show a table of scores, sorted by rank."""
-    with shelve.open("elodata") as scores:
-        print("Name   | Score")
-        print("--------------")
-        for name, score in sorted(
-                scores.items(),
-                key=operator.itemgetter(1),
-                reverse=True,
-                ):
-            print("{:<7}|{:<5}".format(name, score))
+    print("Name   | Score")
+    print("--------------")
+    for name, score in sorted(
+            scores.items(),
+            key=operator.itemgetter(1),
+            reverse=True,
+            ):
+        print("{:<7}|{:<5}".format(name, score))
 
 def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
     server_address = ("", 5006)
@@ -148,4 +171,5 @@ def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
         httpd.server_close()
 
 if __name__ == "__main__":
+    load_data()
     run(HTTPServer, KickerAPI)
