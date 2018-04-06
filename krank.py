@@ -14,21 +14,28 @@ class KickerAPI(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(json.dumps(dict(scores)).encode())
+                self.wfile.write(json.dumps(
+                    {k: v
+                        for k, v in scores.items()
+                    }
+                    # dict(scores)
+                ).encode())
         elif self.path == "/logs":
             with open("scores.log", "rb") as f:
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(b"<br>".join(reversed(f.readlines())))
-        elif self.path == "/bootstrap":
-            load_data()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(b"Success")
+                self.wfile.write(b"<br>".join(list(
+                    bstr.split(b"- ")[1] for bstr in reversed(f.readlines())
+                )[:5]))
+        # elif self.path == "/bootstrap":
+        #     load_data()
+        #     self.send_response(200)
+        #     self.send_header("Content-Type", "application/json")
+        #     self.send_header("Access-Control-Allow-Origin", "*")
+        #     self.end_headers()
+        #     self.wfile.write(b"Success")
         elif self.path in ("/index.html", "/", "/style.css", "/app.js") or self.path.startswith("/avatars/"):
             if self.path == "/":
                 self.path = "/index.html"
@@ -39,6 +46,7 @@ class KickerAPI(BaseHTTPRequestHandler):
                 with open("www" + self.path, "rb") as f:
                     content = f.read()
                     self.send_response(200)
+                    self.send_header("Cache-Control", "max-age=1209600")
                     self.end_headers()
                     self.wfile.write(content)
             except FileNotFoundError:
