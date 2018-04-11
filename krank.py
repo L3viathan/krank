@@ -16,6 +16,8 @@ scores = {}
 
 bytes = partial(bytes, encoding="utf8")
 
+LOGS = []
+
 
 class KickerAPI(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -32,33 +34,29 @@ class KickerAPI(BaseHTTPRequestHandler):
                 # dict(scores)
             ).encode())
         elif self.path == "/logs.json":
-            with open("scores.json", "r") as f:
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                for line in f:
-                    data = json.loads(line)
-                    data.pop("date")
-                    self.wfile.write(bytes(json.dumps(data)))
-                    self.wfile.write(b"\n")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            for data, _ in zip(reversed(LOGS), range(8)):
+                data.pop("date", None)
+                self.wfile.write(bytes(json.dumps(data)))
+                self.wfile.write(b"\n")
         elif self.path == "/logs.html":
-            with open("scores.json", "r") as f:
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                for line in reversed(f.read().split("\n")):
-                    if not line:
-                        continue
-                    data = json.loads(line)
-                    self.wfile.write(
-                        b",".join(map(bytes, data["winners"])) +
-                        b" defeat " +
-                        b",".join(map(bytes, data["losers"])) +
-                        b"<br>"
-                    )
-                    self.wfile.write(b"\n")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            for data, _ in zip(reversed(LOGS), range(8)):
+                data.pop("date", None)
+                self.wfile.write(
+                    b", ".join(map(bytes, data["winners"])) +
+                    b" defeat " +
+                    b", ".join(map(bytes, data["losers"])) +
+                    bytes(" (±") + bytes(str(data["value"])) + b")" +
+                    b"<br>"
+                )
+                self.wfile.write(b"\n")
         else:
             if self.path == "/":
                 self.path = "/index.html"
@@ -131,17 +129,23 @@ def elo_kicker(winners, losers, nowrite=False):
     """
     Given four users, mutate the global register of user scores.
     """
+    game_value = None
     for player, change in elo(winners, losers).items():
         scores[player] = change + scores.get(player, 1000)
+        game_value = abs(change)
+    game = {
+        "date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "winners": winners,
+        "losers": losers,
+    }
+    LOGS.append({"value": game_value, **game})
     if nowrite:
         return
     with open("scores.json", "a") as f:
-        f.write(json.dumps({
-            "date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-            "winners": winners,
-            "losers": losers,
-        }))
+        f.write(json.dumps(game))
         f.write("\n")
+
+    return game_value
 
 def load_data():
     with open("scores.json") as f:
