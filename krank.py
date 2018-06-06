@@ -1,7 +1,9 @@
+import os
 import json
 import operator
 import datetime
 from functools import partial
+from collections import Counter
 from urllib.parse import parse_qs
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from html import unescape
@@ -14,14 +16,18 @@ except:
 
 scores = {}
 
+times_played = Counter()
+
 bytes = partial(bytes, encoding="utf8")
 
 LOGS = []
 
+LIMIT = os.environ.get("LIMIT", 8)
+
 
 class KickerAPI(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/table":
+        if self.path.startswith("/table"):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -30,15 +36,16 @@ class KickerAPI(BaseHTTPRequestHandler):
                 {k: v
                     for k, v in scores.items()
                     if k not in HIDDEN
+                    and times_played[k] > 1
+                    or self.path == "/table_{}".format(os.environ.get("KICKER_KEY", "secret"))
                 }
-                # dict(scores)
             ).encode())
         elif self.path == "/logs.json":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            for data, _ in zip(reversed(LOGS), range(8)):
+            for data, _ in zip(reversed(LOGS), range(LIMIT)):
                 data.pop("date", None)
                 self.wfile.write(bytes(json.dumps(data)))
                 self.wfile.write(b"\n")
@@ -47,7 +54,7 @@ class KickerAPI(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            for data, _ in zip(reversed(LOGS), range(8)):
+            for data, _ in zip(reversed(LOGS), range(LIMIT)):
                 data.pop("date", None)
                 self.wfile.write(
                     b", ".join(map(bytes, data["winners"])) +
@@ -133,6 +140,7 @@ def elo_kicker(winners, losers, nowrite=False):
     for player, change in elo(winners, losers).items():
         scores[player] = change + scores.get(player, 1000)
         game_value = abs(change)
+        times_played[player] += 1
     game = {
         "date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "winners": winners,
