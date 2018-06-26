@@ -2,21 +2,29 @@
     <head>
         <meta charset="utf-8">
         <title>Kicker ELO</title>
-        <link rel="stylesheet" href="style.css">
-        <script src="app.js"></script>
+        <!-- <link rel="stylesheet" href="style.css"> -->
     </head>
     <body>
         <div id="wrapper">
-            <h3 class="winnerloser">Winner &mdash; Loser&nbsp;</h3>
+            <h3 class="winnerloser">{{ message }}</h3>
             <div class="playerinput">
                 <input type="text" autofocus>
             </div>
             <button>Log »</button>
             <div id="lower">
-                <table></table>
+                <table>
+                    <tr v-for="player, index in table">
+                        <td> <span class="player" :title="player.name" :style="playerimg[index]"> {{ player.name }} </span>
+                        </td>
+                        <td> {{ player.score }}
+                        </td>
+                    </tr>
+                </table>
                 <div id="log">
                 </div>
             </div>
         </div>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script src="app.js"></script>
     </body>
 </html>

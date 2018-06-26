@@ -166,15 +166,37 @@ function updateTable(ranks) {
     }
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    var i = document.querySelector("input");
-    i.addEventListener('keydown', keyDown);
-    document.querySelector(".playerinput").addEventListener("click", focus);
-    document.querySelector("button").addEventListener("click", clickButton);
-    fillDataFromAPI();
-    fillLogsFromAPI();
-    setInterval(function() {
-        fillDataFromAPI();
-        fillLogsFromAPI();
-    }, 60000);
-});
+// document.addEventListener("DOMContentLoaded", function() {
+//     var i = document.querySelector("input");
+//     i.addEventListener('keydown', keyDown);
+//     document.querySelector(".playerinput").addEventListener("click", focus);
+//     document.querySelector("button").addEventListener("click", clickButton);
+//     fillDataFromAPI();
+//     fillLogsFromAPI();
+//     setInterval(function() {
+//         fillDataFromAPI();
+//         fillLogsFromAPI();
+//     }, 60000);
+// });
+
+var app = new Vue({
+    el: "#wrapper",
+    data: {
+        message: "Hello Vorld!",
+        table: [
+            {
+                "name": "jo",
+                "score": 893,
+            },
+            {
+                "name": "jku",
+                "score": 1203,
+            },
+        ],
+    },
+    computed: {
+        playerimg: function() {
+            return this.table.map(x => 'background-image: url("http://kicker.ding.si/avatars/' + x + '.jpeg")')
+        }
+    },
+})
