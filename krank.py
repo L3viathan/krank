@@ -24,6 +24,7 @@ LOGS = []
 
 LIMIT = os.environ.get("LIMIT", 8)
 
+playerhtml = "<span class=\"player\" title=\"{0}\" style=\"background-image: url(avatars/{0}.jpeg);\"></span>"
 
 class KickerAPI(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -57,11 +58,11 @@ class KickerAPI(BaseHTTPRequestHandler):
             for data, _ in zip(reversed(LOGS), range(LIMIT)):
                 data.pop("date", None)
                 self.wfile.write(
-                    b", ".join(map(bytes, data["winners"])) +
-                    b" defeat " +
-                    b", ".join(map(bytes, data["losers"])) +
+                    b"".join(map(lambda x: bytes(playerhtml.format(x)), data["winners"])) +
+                    bytes(" ⚔️ ") +
+                    b"".join(map(lambda x: bytes(playerhtml.format(x)), data["losers"])) +
                     bytes(" (±") + bytes(str(data["value"])) + b")" +
-                    b"<br>"
+                    b"<br><br>"
                 )
                 self.wfile.write(b"\n")
         else:

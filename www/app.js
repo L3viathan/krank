@@ -3,6 +3,7 @@ function makePlayer(id) {
     elem = document.createElement("span");
     elem.innerText = id;
     elem.className = "player";
+    elem.setAttribute("title", id);
     elem.style.backgroundImage = "url(avatars/" + id + ".jpeg)";
     return elem;
 }
