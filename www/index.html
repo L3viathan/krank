@@ -13,14 +13,24 @@
             <button>Log »</button>
             <div id="lower">
                 <table>
-                    <tr v-for="player, index in table">
-                        <td> <span class="player" :title="player.name" :style="playerimg[index]"> {{ player.name }} </span>
+                    <tr v-for="player in Object.keys(table)">
+                        <td> <span class="player" :title="player" :style="playerimg[player]"> {{ player }} </span>
                         </td>
-                        <td> {{ player.score }}
+                        <td> {{ table[player] }}
                         </td>
                     </tr>
                 </table>
                 <div id="log">
+                    <span v-for="entry in log">
+                        <span v-for="winner in entry.winners">
+                            <span class="player" :title="winner" :style="playerimg[winner]"> {{ winner }} </span>
+                        </span>
+                        —
+                        <span v-for="loser in entry.losers">
+                            <span class="player" :title="loser" :style="playerimg[loser]"> {{ loser }} </span>
+                        </span>
+                        (+-{{ entry.value }})
+                    </span>
                 </div>
             </div>
         </div>

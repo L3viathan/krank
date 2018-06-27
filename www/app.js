@@ -183,20 +183,31 @@ var app = new Vue({
     el: "#wrapper",
     data: {
         message: "Hello Vorld!",
-        table: [
+        table: {
+            "jo": 893,
+            "jku": 1203,
+        },
+        log: [
             {
-                "name": "jo",
-                "score": 893,
+                winners: ["ab", "cd"],
+                losers: ["de", "fg"],
+                value: 8,
             },
             {
-                "name": "jku",
-                "score": 1203,
+                winners: ["ab", "cd"],
+                losers: ["de", "fg"],
+                value: 7,
             },
-        ],
+            {
+                winners: ["ab", "cd"],
+                losers: ["de", "fg"],
+                value: 2,
+            },
+        ]
     },
     computed: {
         playerimg: function() {
-            return this.table.map(x => 'background-image: url("http://kicker.ding.si/avatars/' + x + '.jpeg")')
-        }
+            return Object.keys(this.table).reduce(function(o, x) {o[x] = 'background-image: url("http://kicker.ding.si/avatars/' + x + '.jpeg")'; return o}, {})
+        },
     },
 })
