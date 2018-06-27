@@ -1,12 +1,3 @@
-.playerinput {
-    /* height: 50px; */
-    border: 1px solid grey;
-    border-radius: 3px;
-    padding: 10px;
-    /* margin-top: 20px; */
-    background-color: white;
-}
-
 .player {
     width: 100px;
     background-repeat: no-repeat;
@@ -17,66 +8,4 @@
     padding-right: 5px;
     padding-bottom: 5px;
     margin: 2px;
-}
-
-.playerinput .player {
-    background-color: darkorange; /* deepskyblue */
-}
-
-.playerinput .player:nth-of-type(-n+3) {
-    background-color: deepskyblue;
-}
-
-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width:100%;
-    height:100%;
-    margin: 0;
-    background-image: radial-gradient(white 0%, gray 100%);
-    background-attachment: fixed;
-}
-
-#wrapper {
-    /* width: 400px; */
-    /* height: 500px; */
-    text-align: center;
-    justify-content: center;
-}
-
-input {
-    border: none;
-    outline: none;
-    width: 0px;
-    text-align: center;
-}
-input:focus {
-    width: 50px;
-}
-
-.sep {
-    margin: 20px;
-}
-
-button {
-    margin: 20px;
-    width: 250px;
-    height: 30px;
-    font-size: 14pt;
-}
-
-tr {
-    opacity: 0;
-}
-
-#lower {
-    display: flex;
-}
-
-#log {
-    margin-left: 20px;
-    font-style: italic;
-    font-family: monospace;
-    text-align: left;
 }

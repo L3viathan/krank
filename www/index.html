@@ -2,7 +2,7 @@
     <head>
         <meta charset="utf-8">
         <title>Kicker ELO</title>
-        <!-- <link rel="stylesheet" href="style.css"> -->
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
         <div id="wrapper">
@@ -23,13 +23,14 @@
                 <div id="log">
                     <span v-for="entry in log">
                         <span v-for="winner in entry.winners">
-                            <span class="player" :title="winner" :style="playerimg[winner]"> {{ winner }} </span>
+                            <span class="player" :title="winner" :style="playerimg[winner]"></span>
                         </span>
                         —
                         <span v-for="loser in entry.losers">
-                            <span class="player" :title="loser" :style="playerimg[loser]"> {{ loser }} </span>
+                            <span class="player" :title="loser" :style="playerimg[loser]"></span>
                         </span>
                         (+-{{ entry.value }})
+                        <br>
                     </span>
                 </div>
             </div>

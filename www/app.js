@@ -186,22 +186,23 @@ var app = new Vue({
         table: {
             "jo": 893,
             "jku": 1203,
+            "mima": 1203,
+            "blb": 1203,
+            "ps": 1203,
+            "skl": 1203,
+            "amo": 1203,
+            "dad": 1203,
         },
         log: [
             {
-                winners: ["ab", "cd"],
-                losers: ["de", "fg"],
+                winners: ["amo", "blb"],
+                losers: ["jo", "jku"],
                 value: 8,
             },
             {
-                winners: ["ab", "cd"],
-                losers: ["de", "fg"],
+                winners: ["ps", "skl"],
+                losers: ["mima", "dad"],
                 value: 7,
-            },
-            {
-                winners: ["ab", "cd"],
-                losers: ["de", "fg"],
-                value: 2,
             },
         ]
     },
