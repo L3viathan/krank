@@ -22,16 +22,24 @@ bytes = partial(bytes, encoding="utf8")
 
 LOGS = []
 
+PLAYER2DATE2SCORE = {}
+
 LIMIT = os.environ.get("LIMIT", 8)
 
-playerhtml = "<span class=\"player\" title=\"{0}\" style=\"background-image: url(avatars/{0}.jpeg);\"></span>"
+avatars = os.listdir("www/avatars")
+
+def player_to_html(player):
+    if player + ".jpeg" in avatars:
+        return bytes("<span class=\"player\" title=\"{0}\" style=\"background-image: url(avatars/{0}.jpeg);\"></span>".format(player))
+    else:
+        return bytes("<span class=\"player\" title=\"{0}\" style=\"background-image: url(avatars/anonymous.jpeg);\"></span>".format(player))
 
 class KickerAPI(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/table"):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin") or "<origin> | *")
             self.end_headers()
             self.wfile.write(json.dumps(
                 {k: v
@@ -41,10 +49,21 @@ class KickerAPI(BaseHTTPRequestHandler):
                     or self.path == "/table_{}".format(os.environ.get("KICKER_KEY", "secret"))
                 }
             ).encode())
+        elif self.path.startswith("/history/"):
+            _, __, player = self.path.partition("/history/")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin") or "<origin> | *")
+            self.end_headers()
+            for date in sorted(PLAYER2DATE2SCORE.get(player, [])):
+                self.wfile.write('["{}", {}]\n'.format(
+                    date,
+                    PLAYER2DATE2SCORE[player][date],
+                ).encode("utf-8"))
         elif self.path == "/logs.json":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin") or "<origin> | *")
             self.end_headers()
             for data, _ in zip(reversed(LOGS), range(LIMIT)):
                 data.pop("date", None)
@@ -53,14 +72,14 @@ class KickerAPI(BaseHTTPRequestHandler):
         elif self.path == "/logs.html":
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin") or "<origin> | *")
             self.end_headers()
             for data, _ in zip(reversed(LOGS), range(LIMIT)):
                 data.pop("date", None)
                 self.wfile.write(
-                    b"".join(map(lambda x: bytes(playerhtml.format(x)), data["winners"])) +
+                    b"".join(map(player_to_html, data["winners"])) +
                     bytes(" ⚔️ ") +
-                    b"".join(map(lambda x: bytes(playerhtml.format(x)), data["losers"])) +
+                    b"".join(map(player_to_html, data["losers"])) +
                     bytes(" (±") + bytes(str(data["value"])) + b")" +
                     b"<br><br>"
                 )
@@ -93,7 +112,7 @@ class KickerAPI(BaseHTTPRequestHandler):
         )
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin") or "<origin> | *")
         self.end_headers()
 
     def make_post_parameters(self):
@@ -133,17 +152,19 @@ def elo(wins, loses, k=16):
     })
     return data
 
-def elo_kicker(winners, losers, nowrite=False):
+def elo_kicker(winners, losers, date=None, nowrite=False):
     """
     Given four users, mutate the global register of user scores.
     """
+    date = date or datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     game_value = None
     for player, change in elo(winners, losers).items():
         scores[player] = change + scores.get(player, 1000)
+        PLAYER2DATE2SCORE.setdefault(player, {})[date] = scores[player]
         game_value = abs(change)
         times_played[player] += 1
     game = {
-        "date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "date": date,
         "winners": winners,
         "losers": losers,
     }
@@ -160,7 +181,7 @@ def load_data():
     with open("scores.json") as f:
         for line in f:
             data = json.loads(line)
-            elo_kicker(winners=data["winners"], losers=data["losers"], nowrite=True)
+            elo_kicker(winners=data["winners"], losers=data["losers"], date=data["date"], nowrite=True)
 
 def print_ranks():
     """Show a table of scores, sorted by rank."""

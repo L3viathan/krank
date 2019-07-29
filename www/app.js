@@ -111,7 +111,7 @@ function clickButton() {
 
 function sendMatchToAPI(data) {
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "http://kicker.ding.si/");
+    xhr.open("POST", "//steckoverflow.com/");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4) {
             fillDataFromAPI();
@@ -125,7 +125,7 @@ function sendMatchToAPI(data) {
 
 function fillDataFromAPI() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://kicker.ding.si/table");
+    xhr.open("GET", "https://steckoverflow.com/table");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4 && xhr.status == 200) {
             ranks = JSON.parse(xhr.responseText);
@@ -137,7 +137,7 @@ function fillDataFromAPI() {
 
 function fillLogsFromAPI() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://kicker.ding.si/logs.html");
+    xhr.open("GET", "https://steckoverflow.com/logs.html");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4 && xhr.status == 200) {
             updateLogs(xhr.responseText);
