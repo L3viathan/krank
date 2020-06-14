@@ -111,7 +111,7 @@ function clickButton() {
 
 function sendMatchToAPI(data) {
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "//steckoverflow.com/");
+    xhr.open("POST", "https://apy4i.l3vi.de/krank/submit");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4) {
             fillDataFromAPI();
@@ -119,13 +119,14 @@ function sendMatchToAPI(data) {
         }
     };
     xhr.setRequestHeader("Content-type", "application/json");
-    var data = "winners="+data[0]+","+data[1]+"&losers="+data[2]+","+data[3];
-    xhr.send(data);
+    xhr.send(
+        JSON.stringify({"winners": [data[0], data[1]], "losers": [data[2], data[3]]})
+    );
 }
 
 function fillDataFromAPI() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "https://steckoverflow.com/table");
+    xhr.open("GET", "https://apy4i.l3vi.de/table");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4 && xhr.status == 200) {
             ranks = JSON.parse(xhr.responseText);
@@ -137,7 +138,7 @@ function fillDataFromAPI() {
 
 function fillLogsFromAPI() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "https://steckoverflow.com/logs.html");
+    xhr.open("GET", "https://apy4i.l3vi.de/logs");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4 && xhr.status == 200) {
             updateLogs(xhr.responseText);
