@@ -126,7 +126,7 @@ function sendMatchToAPI(data) {
 
 function fillDataFromAPI() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "https://apy4i.l3vi.de/table");
+    xhr.open("GET", "https://apy4i.l3vi.de/krank/table");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4 && xhr.status == 200) {
             ranks = JSON.parse(xhr.responseText);
@@ -138,7 +138,7 @@ function fillDataFromAPI() {
 
 function fillLogsFromAPI() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "https://apy4i.l3vi.de/logs");
+    xhr.open("GET", "https://apy4i.l3vi.de/krank/logs");
     xhr.onreadystatechange = function(e) {
         if (xhr.readyState == 4 && xhr.status == 200) {
             updateLogs(xhr.responseText);
